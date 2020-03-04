@@ -28,8 +28,19 @@ var CurrentConfig Config
 
 // OpenWeatherProvider fetch weather information from openweather service
 type OpenWeatherProvider struct {
-	config  *Config
-	results []string
+	config *Config
+}
+
+// OpenWeatherResponse contains the data returned by openweather
+type OpenWeatherResponse struct {
+	LocationName string `json:"name"`
+	Main         struct {
+		Temp      float64 `json:"temp"`
+		FeelsLike float64 `json:"feels_like"`
+	}
+	Sys struct {
+		Country string `json:"country"`
+	}
 }
 
 // GetWeatherData returns data from service openweather
@@ -42,10 +53,10 @@ func (o *OpenWeatherProvider) GetWeatherData(query string) (string, error) {
 		return "", fmt.Errorf("Error getting information: %s", err)
 	}
 
-	var result map[string]interface{}
+	var owResponse OpenWeatherResponse
 
-	json.NewDecoder(resp.Body).Decode(&result)
-	return fmt.Sprintf("%s", result), nil
+	json.NewDecoder(resp.Body).Decode(&owResponse)
+	return fmt.Sprintf("Location: %s - %s, temperature: %.2f, feels like %.2f\n", owResponse.LocationName, owResponse.Sys.Country, owResponse.Main.Temp, owResponse.Main.FeelsLike), nil
 }
 
 // WriteWeatherData to get the message to display to the end user.
@@ -81,5 +92,5 @@ func main() {
 	LoadConfiguration(ConfigFileName)
 
 	http.HandleFunc("/", handler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":80", nil))
 }
